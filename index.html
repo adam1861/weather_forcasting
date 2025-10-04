@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌦️ Environmental Prediction Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-cloud-sun"></i> Environmental Prediction Dashboard</h1>
+                <p>Predict environmental variables for any date in 2023 using advanced machine learning</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Input Section -->
+            <section class="input-section">
+                <div class="card">
+                    <h2><i class="fas fa-calendar-alt"></i> Select Date</h2>
+                    <div class="input-group">
+                        <input type="date" id="dateInput" min="2023-01-01" max="2023-12-31" value="2023-02-15">
+                        <button id="predictBtn" class="btn-primary">
+                            <i class="fas fa-magic"></i> Predict Environment
+                        </button>
+                    </div>
+                    <div class="date-info">
+                        <p><i class="fas fa-info-circle"></i> Select any date in 2023 to get environmental predictions</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading-state hidden">
+                <div class="spinner"></div>
+                <p>Analyzing environmental patterns...</p>
+            </div>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section hidden">
+                <!-- Weather Summary Card -->
+                <div class="card weather-summary">
+                    <h2><i class="fas fa-thermometer-half"></i> Weather Summary</h2>
+                    <div id="weatherSummary" class="weather-grid">
+                        <!-- Weather summary will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Environmental Variables -->
+                <div class="card">
+                    <h2><i class="fas fa-leaf"></i> Environmental Variables</h2>
+                    <div class="controls">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search variables...">
+                        </div>
+                        <div class="filter-buttons">
+                            <button class="filter-btn active" data-category="all">All</button>
+                            <button class="filter-btn" data-category="temperature">Temperature</button>
+                            <button class="filter-btn" data-category="moisture">Moisture</button>
+                            <button class="filter-btn" data-category="radiation">Radiation</button>
+                            <button class="filter-btn" data-category="precipitation">Precipitation</button>
+                        </div>
+                    </div>
+                    <div id="variablesTable" class="variables-table">
+                        <!-- Variables table will be populated here -->
+                    </div>
+                </div>
+
+
+                <!-- Confidence Intervals -->
+                <div class="card">
+                    <h2><i class="fas fa-shield-alt"></i> Prediction Confidence</h2>
+                    <div id="confidenceSection" class="confidence-section">
+                        <!-- Confidence intervals will be populated here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Error State -->
+            <div id="errorState" class="error-state hidden">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Oops! Something went wrong</h3>
+                <p id="errorMessage">Unable to process your request. Please try again.</p>
+                <button id="retryBtn" class="btn-secondary">Try Again</button>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2024 Environmental Prediction Dashboard | Powered by Machine Learning</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
