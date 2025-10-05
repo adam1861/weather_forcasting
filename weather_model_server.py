@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import numpy as np
 import pandas as pd
 import joblib
@@ -9,6 +10,7 @@ import os
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 # Global variables for model components
 xgb_model = None
@@ -48,13 +50,13 @@ def load_model():
         scaler_X = joblib.load('models/scaler_X.pkl')
         scaler_y = joblib.load('models/scaler_y.pkl')
         
-        print("✅ XGBoost model loaded successfully!")
-        print(f"📊 Time features: {len(time_features)}")
-        print(f"🎯 Target variables: {len(target_columns)}")
+        print("XGBoost model loaded successfully!")
+        print(f"Time features: {len(time_features)}")
+        print(f"Target variables: {len(target_columns)}")
         return True
         
     except Exception as e:
-        print(f"❌ Error loading model: {e}")
+        print(f"Error loading model: {e}")
         return False
 
 def predict_weather(date_str, lat, lon):
@@ -64,7 +66,7 @@ def predict_weather(date_str, lat, lon):
     try:
         # Validate model is loaded
         if xgb_model is None or scaler_X is None or scaler_y is None:
-            print("❌ Model not loaded")
+            print("Model not loaded")
             return None
         
         # Convert input to datetime
@@ -112,36 +114,82 @@ def predict_weather(date_str, lat, lon):
         return weather_data
         
     except Exception as e:
-        print(f"❌ Error in prediction: {e}")
+        print(f"Error in prediction: {e}")
         return None
 
 def convert_to_weather_states(raw_predictions, lat, lon):
     """
     Convert raw model predictions to user-friendly weather states
+    Using mathematical relationships from akhir haja.py
     """
     try:
-        # Extract key variables
-        temp_air = raw_predictions.get('Tair_f_inst', 273.15)  # Convert from Kelvin to Celsius
+        # Extract variables from raw predictions
+        temp_air = raw_predictions.get('Tair_f_inst', 273.15)
         temp_air_celsius = temp_air - 273.15
+        temp_air_kelvin = temp_air
         
-        # Surface temperature (feels like)
-        temp_surface = raw_predictions.get('AvgSurfT_inst', 273.15)
-        temp_surface_celsius = temp_surface - 273.15
+        # Specific humidity (already in kg/kg, no conversion needed)
+        q_raw = raw_predictions.get('Qair_f_inst', 0.0)
+        q = q_raw  # keep in kg/kg
         
-        # Precipitation
-        rain_rate = raw_predictions.get('Rainf_tavg', 0)
-        snow_rate = raw_predictions.get('Snowf_tavg', 0)
+        # Surface pressure (convert from Pa to hPa)
+        pressure_pa = raw_predictions.get('Psurf_f_inst', 101325)
+        pressure_hpa = pressure_pa / 100
         
-        # Wind
-        wind_speed = raw_predictions.get('Wind_f_inst', 0)
+        # Wind components
+        u_wind = raw_predictions.get('U_f_inst', 0.0)
+        v_wind = raw_predictions.get('V_f_inst', 0.0)
+        wind_speed = np.sqrt(u_wind**2 + v_wind**2)
         
-        # Humidity
-        humidity = raw_predictions.get('Qair_f_inst', 0) * 100  # Convert to percentage
+        # Precipitation rates
+        rain_rate = raw_predictions.get('Rainf_tavg', 0.0)
+        snow_rate = raw_predictions.get('Snowf_tavg', 0.0)
         
-        # Pressure
-        pressure = raw_predictions.get('Psurf_f_inst', 101325) / 100  # Convert to hPa
+        # Albedo for cloud cover estimation
+        albedo = raw_predictions.get('Albedo_inst', 0.0)
         
-        # Calculate probabilities and states
+        # === MATHEMATICAL RELATIONSHIPS FROM AKHIR HAJA.PY ===
+        
+        # 1. Relative Humidity calculation
+        # q is already in kg/kg
+        q_kg_kg = q
+        # Calculate vapor pressure
+        e = q_kg_kg * pressure_hpa / (0.622 + 0.378 * q_kg_kg)
+        # Calculate saturation vapor pressure
+        e_sat = np.exp(13.7 - (5120 / temp_air_kelvin))
+        # Relative humidity (%)
+        relative_humidity = 100 * e / e_sat if e_sat > 0 else 0
+        # Ensure humidity is within reasonable bounds
+        relative_humidity = min(100, max(0, relative_humidity))
+        
+        # 2. Heat Index calculation (only for temperatures >= 27°C)
+        temp_fahrenheit = temp_air_celsius * 9/5 + 32
+        if temp_air_celsius >= 27:
+            heat_index_f = (-42.379 + 2.04901523*temp_fahrenheit + 10.14333127*relative_humidity 
+                          - 0.22475541*temp_fahrenheit*relative_humidity
+                          - 0.00683783*temp_fahrenheit**2 - 0.05481717*relative_humidity**2 
+                          + 0.00122874*temp_fahrenheit**2*relative_humidity
+                          + 0.00085282*temp_fahrenheit*relative_humidity**2 
+                          - 0.00000199*temp_fahrenheit**2*relative_humidity**2)
+            heat_index_celsius = (heat_index_f - 32) * 5/9
+        else:
+            heat_index_celsius = temp_air_celsius
+        
+        # 3. Wind gusts estimation
+        wind_gusts = wind_speed * 1.5
+        
+        # 4. Weather probabilities using mathematical relationships
+        rain_probability = min(100, max(0, int(rain_rate * 100)))
+        snow_probability = min(100, max(0, int(snow_rate * 100)))
+        sunny_probability = max(0, 100 - int(albedo * 10))
+        storm_probability = min(100, int(wind_speed * 10))
+        
+        # 5. Wind chill calculation (for cold temperatures)
+        if temp_air_celsius <= 10 and wind_speed >= 4.8:
+            wind_chill = 13.12 + 0.6215*temp_air_celsius - 11.37*(wind_speed**0.16) + 0.3965*temp_air_celsius*(wind_speed**0.16)
+        else:
+            wind_chill = temp_air_celsius
+        
         weather_states = {
             'location': {
                 'latitude': lat,
@@ -150,38 +198,41 @@ def convert_to_weather_states(raw_predictions, lat, lon):
             },
             'temperature': {
                 'air_temperature': round(temp_air_celsius, 1),
-                'feels_like': round(temp_surface_celsius, 1),
+                'feels_like': round(heat_index_celsius, 1),
+                'wind_chill': round(wind_chill, 1),
                 'unit': '°C'
             },
             'precipitation': {
-                'rain_probability': min(100, max(0, rain_rate * 1000)),  # Convert to percentage
-                'snow_probability': min(100, max(0, snow_rate * 1000)),
+                'rain_probability': rain_probability,
+                'snow_probability': snow_probability,
                 'rain_rate': round(rain_rate, 3),
                 'snow_rate': round(snow_rate, 3)
             },
             'wind': {
                 'speed': round(wind_speed, 1),
+                'gusts': round(wind_gusts, 1),
                 'unit': 'm/s',
                 'description': get_wind_description(wind_speed)
             },
             'humidity': {
-                'percentage': round(humidity, 1),
-                'description': get_humidity_description(humidity)
+                'percentage': round(relative_humidity, 1),
+                'description': get_humidity_description(relative_humidity)
             },
             'pressure': {
-                'value': round(pressure, 1),
+                'value': round(pressure_hpa, 1),
                 'unit': 'hPa',
-                'description': get_pressure_description(pressure)
+                'description': get_pressure_description(pressure_hpa)
             },
             'weather_conditions': {
                 'primary': get_primary_condition(rain_rate, snow_rate, temp_air_celsius),
-                'storm_probability': calculate_storm_probability(wind_speed, rain_rate, pressure),
-                'visibility': get_visibility_description(humidity, rain_rate)
+                'storm_probability': storm_probability,
+                'sunny_probability': sunny_probability,
+                'visibility': get_visibility_description(relative_humidity, rain_rate)
             },
             'comfort_index': {
-                'heat_index': calculate_heat_index(temp_air_celsius, humidity),
-                'wind_chill': calculate_wind_chill(temp_air_celsius, wind_speed),
-                'comfort_level': get_comfort_level(temp_air_celsius, humidity, wind_speed)
+                'heat_index': round(heat_index_celsius, 1),
+                'wind_chill': round(wind_chill, 1),
+                'comfort_level': get_comfort_level(temp_air_celsius, relative_humidity, wind_speed)
             }
         }
         
@@ -355,13 +406,13 @@ def health():
 if __name__ == '__main__':
     # Load model on startup
     if load_model():
-        print("🚀 Starting XGBoost Weather Prediction Server...")
-        print("📍 Server will be available at: http://localhost:5000")
-        print("🛑 Press Ctrl+C to stop the server")
+        print("Starting XGBoost Weather Prediction Server...")
+        print("Server will be available at: http://localhost:5000")
+        print("Press Ctrl+C to stop the server")
         app.run(debug=False, host='0.0.0.0', port=5000)
     else:
-        print("❌ Failed to load model. Please check model files.")
-        print("📁 Make sure these files exist:")
+        print("Failed to load model. Please check model files.")
+        print("Make sure these files exist:")
         print("   - models/model_info.pkl")
         print("   - models/xgb_model.json") 
         print("   - models/scaler_X.pkl")
