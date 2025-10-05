@@ -1,0 +1,22 @@
+[
+  { "name": "Singapore" },
+  { "name": "Jurong East" },
+  { "name": "Tampines" },
+  { "name": "Woodlands" },
+  { "name": "Sengkang" },
+  { "name": "Punggol" },
+  { "name": "Yishun" },
+  { "name": "Ang Mo Kio" },
+  { "name": "Hougang" },
+  { "name": "Sembawang" },
+  { "name": "Choa Chu Kang" },
+  { "name": "Bukit Panjang" },
+  { "name": "Pasir Ris" },
+  { "name": "Clementi" },
+  { "name": "Bedok" },
+  { "name": "Toa Payoh" },
+  { "name": "Bishan" },
+  { "name": "Serangoon" },
+  { "name": "Kallang" },
+  { "name": "Marina Bay" }
+]

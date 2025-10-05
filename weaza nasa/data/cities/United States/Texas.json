@@ -1,0 +1,22 @@
+[
+  { "name": "Houston" },
+  { "name": "Dallas" },
+  { "name": "Austin" },
+  { "name": "San Antonio" },
+  { "name": "Fort Worth" },
+  { "name": "El Paso" },
+  { "name": "Arlington" },
+  { "name": "Corpus Christi" },
+  { "name": "Plano" },
+  { "name": "Laredo" },
+  { "name": "Lubbock" },
+  { "name": "Garland" },
+  { "name": "Irving" },
+  { "name": "Amarillo" },
+  { "name": "Grand Prairie" },
+  { "name": "Brownsville" },
+  { "name": "Pasadena" },
+  { "name": "Mesquite" },
+  { "name": "McKinney" },
+  { "name": "McAllen" }
+]

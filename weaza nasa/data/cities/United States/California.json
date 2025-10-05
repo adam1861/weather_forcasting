@@ -1,0 +1,22 @@
+[
+  { "name": "Los Angeles" },
+  { "name": "San Francisco" },
+  { "name": "San Diego" },
+  { "name": "San Jose" },
+  { "name": "Sacramento" },
+  { "name": "Fresno" },
+  { "name": "Long Beach" },
+  { "name": "Oakland" },
+  { "name": "Bakersfield" },
+  { "name": "Anaheim" },
+  { "name": "Santa Ana" },
+  { "name": "Riverside" },
+  { "name": "Stockton" },
+  { "name": "Irvine" },
+  { "name": "Chula Vista" },
+  { "name": "Fremont" },
+  { "name": "San Bernardino" },
+  { "name": "Modesto" },
+  { "name": "Fontana" },
+  { "name": "Oxnard" }
+]

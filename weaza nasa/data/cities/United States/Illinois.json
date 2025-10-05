@@ -1,0 +1,22 @@
+[
+  { "name": "Chicago" },
+  { "name": "Aurora" },
+  { "name": "Rockford" },
+  { "name": "Joliet" },
+  { "name": "Naperville" },
+  { "name": "Springfield" },
+  { "name": "Peoria" },
+  { "name": "Elgin" },
+  { "name": "Waukegan" },
+  { "name": "Cicero" },
+  { "name": "Champaign" },
+  { "name": "Bloomington" },
+  { "name": "Arlington Heights" },
+  { "name": "Evanston" },
+  { "name": "Decatur" },
+  { "name": "Schaumburg" },
+  { "name": "Bolingbrook" },
+  { "name": "Palatine" },
+  { "name": "Skokie" },
+  { "name": "Des Plaines" }
+]

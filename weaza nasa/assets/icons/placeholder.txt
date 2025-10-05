@@ -1,0 +1,3 @@
+Place SVG icons in this folder: sun.svg, rain.svg, snow.svg, storm.svg, drop.svg, thermo.svg, thermo-feel.svg, search.svg, moon.svg, weather-sun.svg
+
+

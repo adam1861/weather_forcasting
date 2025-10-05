@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weaza Nasa - Weather Forecast</title>
+  <meta name="description" content="Responsive weather forecasting with maps, probabilities, and dynamic themes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="icon" href="assets/icons/weather-sun.svg">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://*.openstreetmap.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; script-src 'self' https://unpkg.com; connect-src 'self' https://api.openweathermap.org https://weather.visualcrossing.com https://geocoding-api.open-meteo.com;">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="particles" aria-hidden="true">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+  <header class="site-header" role="banner">
+    <nav class="navbar" aria-label="Primary">
+      <div class="brand">
+        <img class="brand__icon" src="assets/icons/weather-sun.svg" alt="Site logo" width="28" height="28">
+        <span class="brand__title">Weather forecast</span>
+      </div>
+      <form class="search" role="search" aria-label="Location search" autocomplete="off">
+        <input id="searchInput" name="q" class="search__input" type="search" placeholder="Search city or coordinates" aria-label="Search city or coordinates">
+        <button class="btn btn--ghost" type="submit" aria-label="Search">
+          <span class="icon" data-icon="search" aria-hidden="true"></span>
+        </button>
+      </form>
+      <div class="toggles">
+        <button id="colorSchemeToggle" class="btn btn--ghost" aria-pressed="false" aria-label="Toggle dark mode">
+          <span class="icon" data-icon="moon" aria-hidden="true"></span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container" role="main">
+    <section class="selectors" aria-labelledby="location-heading">
+      <h2 id="location-heading" class="sr-only">Select location</h2>
+      <div class="selector selector--hierarchy" aria-label="Hierarchical selection">
+        <label for="country">Country</label>
+        <div class="select-wrap">
+          <select id="country" class="input select" aria-describedby="countryHelp">
+            <option value="" disabled selected>Select a country</option>
+          </select>
+        </div>
+        <p id="countryHelp" class="help">Pick a country to load cities.</p>
+
+
+        <label for="city">City</label>
+        <div class="select-wrap">
+          <select id="city" class="input select" disabled aria-disabled="true">
+            <option value="" disabled selected>Select a city</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="selector selector--coords" aria-label="Coordinates input">
+        <div class="field">
+          <label for="lat">Latitude</label>
+          <input id="lat" class="input" type="text" inputmode="decimal" placeholder="e.g. 40.7128" aria-invalid="false">
+        </div>
+        <div class="field">
+          <label for="lng">Longitude</label>
+          <input id="lng" class="input" type="text" inputmode="decimal" placeholder="e.g. -74.0060" aria-invalid="false">
+        </div>
+        <div class="actions">
+          <button id="convertFormat" class="btn btn--ghost" type="button">Convert format</button>
+          <button id="useLocation" class="btn" type="button">Use Current Location</button>
+        </div>
+        <p id="coordError" class="error" role="alert" aria-live="polite" hidden></p>
+      </div>
+
+      <div class="selector selector--day" aria-label="Day selection">
+        <label for="datePicker">Forecast Date</label>
+        <div class="date-picker-container">
+          <input id="datePicker" class="input date-picker" type="date" aria-describedby="dateHelp">
+          <div class="date-display" id="dateDisplay"></div>
+        </div>
+        <p id="dateHelp" class="help">Select a date for weather forecast (up to 7 days ahead).</p>
+      </div>
+
+      <div class="selector selector--map" aria-label="Map selection">
+        <div id="map" class="map" role="application" aria-label="Interactive map" data-loading="lazy"></div>
+        <div class="map__coords" aria-live="polite">
+          <span>Lat: <strong id="mapLat">—</strong></span>
+          <span>Lng: <strong id="mapLng">—</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard" aria-labelledby="dashboard-heading">
+      <div class="dashboard__header">
+        <h2 id="dashboard-heading">Weather Prediction</h2>
+        <button id="predictBtn" class="btn btn--primary">
+          <span class="btn__content">Predict the Weather</span>
+          <span class="spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <!-- Current Weather Card -->
+      <div class="weather-card current-weather">
+        <div class="weather-card__header">
+          <h3>CURRENT WEATHER</h3>
+          <span class="weather-card__time" id="currentTime">—</span>
+        </div>
+        <div class="weather-card__content">
+          <div class="weather-main">
+            <div class="weather-icon-large">
+              <span class="icon" data-icon="sun" aria-hidden="true"></span>
+            </div>
+            <div class="weather-temp">
+              <span class="temp-value" id="currentTemp">—</span>
+              <span class="temp-unit">°C</span>
+            </div>
+            <div class="weather-details">
+              <p class="realfeel">RealFeel® <span id="currentFeelsLike">—</span>°</p>
+              <p class="condition" id="currentCondition">Partly sunny</p>
+              <button class="more-details">MORE DETAILS ></button>
+            </div>
+          </div>
+          <div class="weather-metrics">
+            <div class="metric">
+              <span class="metric-label">RealFeel Shade™</span>
+              <span class="metric-value" id="shadeTemp">—</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">
+                <span class="icon" data-icon="storm" aria-hidden="true"></span>
+                Wind
+              </span>
+              <span class="metric-value" id="windSpeed">—</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">
+                <span class="icon" data-icon="storm" aria-hidden="true"></span>
+                Wind Gusts
+              </span>
+              <span class="metric-value" id="windGusts">—</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">
+                <span class="icon" data-icon="humidity" aria-hidden="true"></span>
+                Humidity
+              </span>
+              <span class="metric-value" id="humidity">—</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">
+                <span class="icon" data-icon="pressure" aria-hidden="true"></span>
+                Pressure
+              </span>
+              <span class="metric-value" id="pressure">—</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">
+                <span class="icon" data-icon="visibility" aria-hidden="true"></span>
+                Visibility
+              </span>
+              <span class="metric-value" id="visibility">—</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">
+                <span class="icon" data-icon="comfort" aria-hidden="true"></span>
+                Comfort Level
+              </span>
+              <span class="metric-value" id="comfortLevel">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tonight's Weather Card -->
+      <div class="weather-card tonight-weather">
+        <div class="weather-card__header">
+          <h3>TONIGHT'S WEATHER</h3>
+          <span class="weather-card__date" id="tonightDate">—</span>
+        </div>
+        <div class="weather-card__content">
+          <div class="tonight-main">
+            <div class="weather-icon-medium">
+              <span class="icon" data-icon="moon" aria-hidden="true"></span>
+            </div>
+            <div class="tonight-details">
+              <p class="tonight-condition">Clear</p>
+              <p class="tonight-temp">Lo: <span id="tonightLow">—</span>°</p>
+            </div>
+          </div>
+          <div class="tomorrow-preview">
+            <div class="weather-icon-small">
+              <span class="icon" data-icon="sun" aria-hidden="true"></span>
+            </div>
+            <div class="tomorrow-details">
+              <p class="tomorrow-condition">Tomorrow: Mostly sunny and pleasant</p>
+              <p class="tomorrow-temp">Hi: <span id="tomorrowHigh">—</span>°</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Probability Cards -->
+      <div class="cards cards--probabilities">
+        <article class="card" data-kind="sunny" aria-live="polite">
+          <div class="card__icon" aria-hidden="true"><span class="icon" data-icon="sun"></span></div>
+          <div class="card__body">
+            <h3>Sunny Probability</h3>
+            <p class="value"><span id="probSunny">0</span><span class="unit">%</span></p>
+          </div>
+        </article>
+        <article class="card" data-kind="rainy" aria-live="polite">
+          <div class="card__icon" aria-hidden="true"><span class="icon" data-icon="rain"></span></div>
+          <div class="card__body">
+            <h3>Rainy Probability</h3>
+            <p class="value"><span id="probRainy">0</span><span class="unit">%</span></p>
+          </div>
+        </article>
+        <article class="card" data-kind="snowy" aria-live="polite">
+          <div class="card__icon" aria-hidden="true"><span class="icon" data-icon="snow"></span></div>
+          <div class="card__body">
+            <h3>Snowy Probability</h3>
+            <p class="value"><span id="probSnowy">0</span><span class="unit">%</span></p>
+          </div>
+        </article>
+        <article class="card" data-kind="storm" aria-live="polite">
+          <div class="card__icon" aria-hidden="true"><span class="icon" data-icon="storm"></span></div>
+          <div class="card__body">
+            <h3>Storm Probability</h3>
+            <p class="value"><span id="probStorm">0</span><span class="unit">%</span></p>
+          </div>
+        </article>
+      </div>
+
+      <p id="apiError" class="error" role="alert" aria-live="polite" hidden></p>
+    </section>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <p>© <span id="year"></span> Weaza Nasa</p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js" defer></script>
+  <link rel="manifest" href="manifest.webmanifest">
+  <script>
+    if('serviceWorker' in navigator){
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(()=>{});
+      });
+    }
+  </script>
+</body>
+</html>
+

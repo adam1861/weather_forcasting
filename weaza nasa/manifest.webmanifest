@@ -1,0 +1,13 @@
+{
+  "name": "Weaza Nasa",
+  "short_name": "Weaza",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#7aa2ff",
+  "icons": [
+    { "src": "assets/icons/weather-sun.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
+
+
