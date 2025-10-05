@@ -3,69 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌦️ Environmental Prediction Dashboard</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>⚡ Weather Oracle - AI-Powered Forecasting</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Animated Background -->
+    <div class="animated-bg">
+        <div class="bg-gradient"></div>
+        <div class="floating-particles"></div>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <h1><i class="fas fa-cloud-sun"></i> Environmental Prediction Dashboard</h1>
-                <p>Predict environmental variables for any date in 2023 using advanced machine learning</p>
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Weather Oracle</h1>
+                        <span class="tagline">AI-Powered Environmental Intelligence</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
             </div>
         </header>
 
         <!-- Main Content -->
         <main class="main-content">
+            <!-- Hero Section -->
+            <section class="hero-section">
+                <div class="hero-content">
+                    <h2 class="hero-title">Predict the Future of Weather</h2>
+                    <p class="hero-subtitle">Harness the power of AI to forecast environmental conditions with unprecedented accuracy</p>
+                </div>
+            </section>
+
             <!-- Input Section -->
             <section class="input-section">
-                <div class="card">
-                    <h2><i class="fas fa-calendar-alt"></i> Select Date</h2>
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h2>Prediction Settings</h2>
+                    </div>
+                    
+                    <!-- Date Selection -->
                     <div class="input-group">
-                        <input type="date" id="dateInput" min="2023-01-01" max="2023-12-31" value="2023-02-15">
-                        <button id="predictBtn" class="btn-primary">
-                            <i class="fas fa-magic"></i> Predict Environment
+                        <div class="date-input-wrapper">
+                            <label for="dateInput" class="input-label">Choose your date</label>
+                            <input type="date" id="dateInput" min="2023-01-01" max="2023-12-31" value="2023-02-15" class="date-input">
+                        </div>
+                    </div>
+
+                    <!-- Location Selection -->
+                    <div class="location-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-map-marker-alt"></i> Location Selection</h3>
+                            <div class="location-tabs">
+                                <button class="tab-btn active" data-tab="dropdown">Dropdown</button>
+                                <button class="tab-btn" data-tab="coordinates">Coordinates</button>
+                                <button class="tab-btn" data-tab="map">Map</button>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown Location Selection -->
+                        <div class="location-tab-content active" id="dropdown-tab">
+                            <div class="location-dropdowns">
+                                <div class="dropdown-group">
+                                    <label for="countrySelect" class="input-label">Country</label>
+                                    <select id="countrySelect" class="location-select">
+                                        <option value="">Select Country</option>
+                                    </select>
+                                </div>
+                                <div class="dropdown-group">
+                                    <label for="regionSelect" class="input-label">Region/State</label>
+                                    <select id="regionSelect" class="location-select" disabled>
+                                        <option value="">Select Region</option>
+                                    </select>
+                                </div>
+                                <div class="dropdown-group">
+                                    <label for="citySelect" class="input-label">City</label>
+                                    <select id="citySelect" class="location-select" disabled>
+                                        <option value="">Select City</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Coordinates Input -->
+                        <div class="location-tab-content" id="coordinates-tab">
+                            <div class="coordinates-input">
+                                <div class="coord-group">
+                                    <label for="latitudeInput" class="input-label">Latitude</label>
+                                    <input type="number" id="latitudeInput" class="coord-input" placeholder="e.g., 40.7128" step="any" min="-90" max="90">
+                                </div>
+                                <div class="coord-group">
+                                    <label for="longitudeInput" class="input-label">Longitude</label>
+                                    <input type="number" id="longitudeInput" class="coord-input" placeholder="e.g., -74.0060" step="any" min="-180" max="180">
+                                </div>
+                                <button id="getLocationBtn" class="location-btn">
+                                    <i class="fas fa-crosshairs"></i>
+                                    <span>Use Current Location</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Map Selection -->
+                        <div class="location-tab-content" id="map-tab">
+                            <div class="map-container">
+                                <div id="map" class="weather-map"></div>
+                                <div class="map-controls">
+                                    <button id="mapCenterBtn" class="map-btn">
+                                        <i class="fas fa-crosshairs"></i>
+                                        <span>Center on Location</span>
+                                    </button>
+                                    <div class="map-coordinates">
+                                        <span id="mapCoordinates">Click on map to select location</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="action-container">
+                        <button id="predictBtn" class="predict-btn">
+                            <span class="btn-text">Generate Prediction</span>
+                            <div class="btn-icon">
+                                <i class="fas fa-magic"></i>
+                            </div>
+                            <div class="btn-glow"></div>
                         </button>
                     </div>
-                    <div class="date-info">
-                        <p><i class="fas fa-info-circle"></i> Select any date in 2023 to get environmental predictions</p>
+
+                    <div class="input-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Select date and location to unlock AI-powered environmental insights</span>
                     </div>
                 </div>
             </section>
 
             <!-- Loading State -->
             <div id="loadingState" class="loading-state hidden">
-                <div class="spinner"></div>
-                <p>Analyzing environmental patterns...</p>
+                <div class="loading-container">
+                    <div class="neon-spinner">
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-ring"></div>
+                        <div class="spinner-ring"></div>
+                    </div>
+                    <h3>Analyzing Environmental Patterns</h3>
+                    <p>Processing meteorological data with AI algorithms...</p>
+                </div>
             </div>
 
             <!-- Results Section -->
             <section id="resultsSection" class="results-section hidden">
                 <!-- Weather Summary Card -->
-                <div class="card weather-summary">
-                    <h2><i class="fas fa-thermometer-half"></i> Weather Summary</h2>
+                <div class="glass-card weather-summary">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-thermometer-half"></i>
+                        </div>
+                        <h2>Weather Forecast</h2>
+                    </div>
                     <div id="weatherSummary" class="weather-grid">
                         <!-- Weather summary will be populated here -->
                     </div>
                 </div>
 
                 <!-- Environmental Variables -->
-                <div class="card">
-                    <h2><i class="fas fa-leaf"></i> Environmental Variables</h2>
-                    <div class="controls">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="searchInput" placeholder="Search variables...">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-leaf"></i>
                         </div>
-                        <div class="filter-buttons">
-                            <button class="filter-btn active" data-category="all">All</button>
-                            <button class="filter-btn" data-category="temperature">Temperature</button>
-                            <button class="filter-btn" data-category="moisture">Moisture</button>
-                            <button class="filter-btn" data-category="radiation">Radiation</button>
-                            <button class="filter-btn" data-category="precipitation">Precipitation</button>
+                        <h2>Environmental Variables</h2>
+                    </div>
+                    <div class="controls">
+                        <div class="search-container">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchInput" placeholder="Search variables..." class="search-input">
+                            </div>
+                        </div>
+                        <div class="filter-container">
+                            <div class="filter-buttons">
+                                <button class="filter-btn active" data-category="all">
+                                    <span>All</span>
+                                </button>
+                                <button class="filter-btn" data-category="temperature">
+                                    <i class="fas fa-thermometer-half"></i>
+                                    <span>Temperature</span>
+                                </button>
+                                <button class="filter-btn" data-category="moisture">
+                                    <i class="fas fa-tint"></i>
+                                    <span>Moisture</span>
+                                </button>
+                                <button class="filter-btn" data-category="radiation">
+                                    <i class="fas fa-sun"></i>
+                                    <span>Radiation</span>
+                                </button>
+                                <button class="filter-btn" data-category="precipitation">
+                                    <i class="fas fa-cloud-rain"></i>
+                                    <span>Precipitation</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div id="variablesTable" class="variables-table">
@@ -73,10 +225,14 @@
                     </div>
                 </div>
 
-
                 <!-- Confidence Intervals -->
-                <div class="card">
-                    <h2><i class="fas fa-shield-alt"></i> Prediction Confidence</h2>
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h2>Prediction Confidence</h2>
+                    </div>
                     <div id="confidenceSection" class="confidence-section">
                         <!-- Confidence intervals will be populated here -->
                     </div>
@@ -85,19 +241,38 @@
 
             <!-- Error State -->
             <div id="errorState" class="error-state hidden">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>Oops! Something went wrong</h3>
-                <p id="errorMessage">Unable to process your request. Please try again.</p>
-                <button id="retryBtn" class="btn-secondary">Try Again</button>
+                <div class="error-container">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h3>Prediction Failed</h3>
+                    <p id="errorMessage">Unable to process your request. Please try again.</p>
+                    <button id="retryBtn" class="retry-btn">
+                        <i class="fas fa-redo"></i>
+                        <span>Try Again</span>
+                    </button>
+                </div>
             </div>
         </main>
 
         <!-- Footer -->
         <footer class="footer">
-            <p>&copy; 2024 Environmental Prediction Dashboard | Powered by Machine Learning</p>
+            <div class="footer-content">
+                <div class="footer-left">
+                    <p>&copy; 2024 Weather Oracle | Powered by Advanced AI</p>
+                </div>
+                <div class="footer-right">
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
         </footer>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

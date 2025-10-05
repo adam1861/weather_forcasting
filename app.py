@@ -77,8 +77,8 @@ class EnvironmentalPredictor:
             print(f"X Error training model: {e}")
             raise e
     
-    def predict(self, date_str):
-        """Make predictions for a given date"""
+    def predict(self, date_str, location=None):
+        """Make predictions for a given date and location"""
         try:
             d = datetime.strptime(date_str, "%Y-%m-%d")
             year = d.year
@@ -86,7 +86,10 @@ class EnvironmentalPredictor:
             sin_day = np.sin(2 * np.pi * day_of_year / 365)
             cos_day = np.cos(2 * np.pi * day_of_year / 365)
             
+            # For now, use only the original features to avoid model mismatch
+            # In a production app, you would retrain the model with location features
             X_new = pd.DataFrame([[year, sin_day, cos_day]], columns=self.feature_columns)
+            
             predictions = self.model.predict(X_new)[0]
             
             # Create results
@@ -98,18 +101,24 @@ class EnvironmentalPredictor:
                     'unit': self.get_unit(col)
                 })
             
-            # Generate weather summary
-            summary = self.generate_weather_summary(predictions)
+            # Generate weather summary with location context
+            summary = self.generate_weather_summary(predictions, location)
             
             # Generate confidence intervals (simplified)
             confidence = self.generate_confidence_intervals(predictions)
             
-            return {
+            result = {
                 'date': date_str,
                 'variables': variables,
                 'summary': summary,
                 'confidence': confidence
             }
+            
+            # Add location info to result
+            if location:
+                result['location'] = location
+            
+            return result
             
         except Exception as e:
             print(f"X Prediction error: {e}")
@@ -137,7 +146,7 @@ class EnvironmentalPredictor:
         else:
             return ''
     
-    def generate_weather_summary(self, predictions):
+    def generate_weather_summary(self, predictions, location=None):
         """Generate a human-readable weather summary"""
         try:
             # Find key variables
@@ -256,6 +265,7 @@ def predict():
     try:
         data = request.get_json()
         date = data.get('date')
+        location = data.get('location', {})
         
         if not date:
             return jsonify({'error': 'Date is required'}), 400
@@ -266,8 +276,8 @@ def predict():
         except ValueError:
             return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
         
-        # Make prediction
-        result = predictor.predict(date)
+        # Make prediction with location data
+        result = predictor.predict(date, location)
         
         return jsonify(result)
         
