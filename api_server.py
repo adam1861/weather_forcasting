@@ -9,8 +9,8 @@ import webbrowser
 import time
 
 def main():
-    # Change to the weaza nasa directory
-    os.chdir('weaza nasa')
+    # Change to the frontend directory
+    os.chdir('weather_nasa')
     
     # Set up the server
     PORT = 8080
