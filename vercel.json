@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "weaza nasa",
+  "functions": {
+    "api/predict.py": {
+      "includeFiles": "models/**",
+      "maxDuration": 60
+    }
+  }
+}
