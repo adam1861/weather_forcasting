@@ -81,8 +81,8 @@ def start_servers():
     """Start both model and website servers"""
     print("🚀 Starting servers...")
     
-    # Start model server
-    print("🤖 Starting XGBoost model server...")
+    # Start forecast API
+    print("🌦️ Starting location-aware forecast API...")
     model_process = subprocess.Popen([
         sys.executable, 'weather_model_server.py'
     ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -95,8 +95,8 @@ def start_servers():
             response = requests.get('http://localhost:5000/health', timeout=2)
             if response.status_code == 200:
                 data = response.json()
-                if data.get('model_loaded', False):
-                    print("✅ Model server is running!")
+                if data.get('status') == 'healthy':
+                    print("✅ Forecast API is running!")
                     break
         except:
             pass
@@ -117,7 +117,7 @@ def start_servers():
     print("🎉 Weaza Nasa Weather Prediction System is running!")
     print("=" * 60)
     print("📍 Website: http://localhost:8080")
-    print("🤖 Model API: http://localhost:5000")
+    print("🌦️ Forecast API: http://localhost:5000")
     print("🛑 Press Ctrl+C to stop both servers")
     print("=" * 60)
     
@@ -149,10 +149,6 @@ def main():
     
     # Install dependencies
     if not install_dependencies():
-        return
-    
-    # Check model files
-    if not check_model_files():
         return
     
     # Check website files

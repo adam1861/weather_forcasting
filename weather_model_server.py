@@ -7,6 +7,7 @@ import xgboost as xgb
 from datetime import datetime
 import warnings
 import os
+from weather_forecast import forecast_for_location
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
@@ -381,13 +382,13 @@ def predict():
         try:
             pd.to_datetime(date)
         except:
-            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DDTHH:MM format'}), 400
+            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD format'}), 400
         
         # Make prediction
-        weather_data = predict_weather(date, lat, lon)
+        weather_data = forecast_for_location(date, lat, lon)
         
         if weather_data is None:
-            return jsonify({'error': 'Failed to generate weather prediction'}), 500
+            return jsonify({'error': 'Failed to generate weather forecast'}), 500
         
         return jsonify({
             'success': True,
@@ -402,20 +403,11 @@ def predict():
 @app.route('/health')
 def health():
     """Health check endpoint"""
-    return jsonify({'status': 'healthy', 'model_loaded': xgb_model is not None})
+    return jsonify({'status': 'healthy', 'forecast_source': 'Open-Meteo'})
 
 if __name__ == '__main__':
-    # Load model on startup
-    if load_model():
-        print("Starting XGBoost Weather Prediction Server...")
-        print("Server will be available at: http://localhost:5000")
-        print("Press Ctrl+C to stop the server")
-        app.run(debug=False, host='0.0.0.0', port=5000)
-    else:
-        print("Failed to load model. Please check model files.")
-        print("Make sure these files exist:")
-        print("   - models/model_info.pkl")
-        print("   - models/xgb_model.json") 
-        print("   - models/scaler_X.pkl")
-        print("   - models/scaler_y.pkl")
+    print("Starting location-aware weather forecast API...")
+    print("Server will be available at: http://localhost:5000")
+    print("Press Ctrl+C to stop the server")
+    app.run(debug=False, host='0.0.0.0', port=5000)
 

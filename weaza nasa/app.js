@@ -265,20 +265,27 @@ class WeatherApp {
   setupDatePicker() {
     const datePicker = document.getElementById('datePicker');
     const dateDisplay = document.getElementById('dateDisplay');
+    const toDateValue = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
     
     // Set default date to today
     const today = new Date();
-    datePicker.value = today.toISOString().split('T')[0];
+    datePicker.value = toDateValue(today);
     dateDisplay.textContent = today.toLocaleDateString();
     
     // Set max date to 7 days from today
     const maxDate = new Date(today);
     maxDate.setDate(maxDate.getDate() + 7);
-    datePicker.max = maxDate.toISOString().split('T')[0];
+    datePicker.min = toDateValue(today);
+    datePicker.max = toDateValue(maxDate);
     
     // Update display when date changes
     datePicker.addEventListener('change', (e) => {
-      const selectedDate = new Date(e.target.value);
+      const selectedDate = new Date(`${e.target.value}T12:00:00`);
       dateDisplay.textContent = selectedDate.toLocaleDateString();
     });
   }
@@ -320,9 +327,12 @@ class WeatherApp {
     spinner.style.display = 'inline-block';
     
     try {
-      const selectedDate = new Date(datePicker.value);
       const today = new Date();
-      const daysFromNow = Math.ceil((selectedDate - today) / (1000 * 60 * 60 * 24));
+      const selectedParts = datePicker.value.split('-').map(Number);
+      const todayParts = [today.getFullYear(), today.getMonth() + 1, today.getDate()];
+      const selectedUtc = Date.UTC(selectedParts[0], selectedParts[1] - 1, selectedParts[2]);
+      const todayUtc = Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2]);
+      const daysFromNow = Math.round((selectedUtc - todayUtc) / (1000 * 60 * 60 * 24));
       
       // Validate date range
       if (daysFromNow < 0) {
@@ -333,15 +343,15 @@ class WeatherApp {
       }
       
       // Get weather data
-      const weatherData = await this.fetchWeatherData(daysFromNow);
+      const weatherData = await this.fetchWeatherData();
       
       if (weatherData) {
         this.updateWeatherDisplay(weatherData);
         this.updateWeatherTheme(weatherData);
       }
     } catch (error) {
-      this.showApiError(`Failed to get weather prediction: ${error.message}. Please check if the model server is running.`);
-      console.error('Weather prediction error:', error);
+      this.showApiError(`Failed to get weather forecast: ${error.message}. Please check your internet connection and try again.`);
+      console.error('Weather forecast error:', error);
     } finally {
       // Hide loading state
       button.disabled = false;
@@ -350,20 +360,20 @@ class WeatherApp {
     }
   }
 
-  async fetchWeatherData(daysFromNow) {
+  async fetchWeatherData() {
     const { lat, lng } = this.currentCoords;
     const datePicker = document.getElementById('datePicker');
-    const selectedDate = new Date(datePicker.value);
+    const isLocalServer = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    const forecastEndpoint = isLocalServer ? 'http://localhost:5000/predict' : '/api/predict';
     
     try {
-      // Call our XGBoost model API
-      const response = await fetch('/api/predict', {
+      const response = await fetch(forecastEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          date: selectedDate.toISOString().slice(0, 16), // Format: YYYY-MM-DDTHH:MM
+          date: datePicker.value,
           latitude: lat,
           longitude: lng
         })
@@ -371,24 +381,24 @@ class WeatherApp {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Model API error: ${response.status}`);
+        throw new Error(errorData.error || `Forecast API error: ${response.status}`);
       }
       
       const data = await response.json();
       
       if (data.success && data.data) {
-        return this.convertModelDataToWeather(data.data);
+        return this.convertForecastDataToWeather(data.data);
       }
       
-      throw new Error(data.error || 'No weather data available from model');
+      throw new Error(data.error || 'No weather forecast is available');
     } catch (error) {
       console.error('Failed to get weather prediction:', error);
       throw error; // Don't fallback to mock data
     }
   }
 
-  convertModelDataToWeather(modelData) {
-    // Convert XGBoost model output to weather display format
+  convertForecastDataToWeather(modelData) {
+    // Convert the location-specific hourly forecast to the display format.
     return {
       temp: Math.round(modelData.temperature.air_temperature),
       feelslike: Math.round(modelData.temperature.feels_like),
@@ -397,7 +407,7 @@ class WeatherApp {
       precip: modelData.precipitation.rain_rate,
       precipprob: modelData.precipitation.rain_probability,
       windSpeed: modelData.wind.speed,
-      windGusts: modelData.wind.speed * 1.3, // Estimate gusts
+      windGusts: modelData.wind.gusts ?? modelData.wind.speed * 1.3,
       pressure: modelData.pressure.value,
       visibility: modelData.weather_conditions.visibility,
       stormProb: modelData.weather_conditions.storm_probability,

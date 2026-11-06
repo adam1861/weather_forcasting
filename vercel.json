@@ -3,7 +3,7 @@
   "outputDirectory": "weaza nasa",
   "functions": {
     "api/predict.py": {
-      "includeFiles": "models/*.pkl",
+      "includeFiles": "weather_forecast.py",
       "maxDuration": 60
     }
   }
