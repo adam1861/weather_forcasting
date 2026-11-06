@@ -25,7 +25,8 @@ def load_model():
     
     try:
         # Check if model files exist
-        model_files = ['models/model_info.pkl', 'models/xgb_model.json', 'models/scaler_X.pkl', 'models/scaler_y.pkl']
+        xgb_model_path = os.environ.get('WEATHER_XGB_MODEL_PATH', 'models/xgb_model.json')
+        model_files = ['models/model_info.pkl', xgb_model_path, 'models/scaler_X.pkl', 'models/scaler_y.pkl']
         for file_path in model_files:
             if not os.path.exists(file_path):
                 print(f"❌ Model file not found: {file_path}")
@@ -38,7 +39,7 @@ def load_model():
         
         # Load XGBoost model
         xgb_model = xgb.XGBRegressor()
-        xgb_model.load_model('models/xgb_model.json')
+        xgb_model.load_model(xgb_model_path)
         
         # Set the model parameters to match training
         xgb_params = model_info.get('xgb_params', {})

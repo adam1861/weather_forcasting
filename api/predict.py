@@ -1,15 +1,39 @@
 import json
+import os
 import threading
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler
+from pathlib import Path
+from tempfile import gettempdir
 
 import pandas as pd
+import requests
 
 import weather_model_server
 
 
 _model_loaded = False
 _model_load_lock = threading.Lock()
+_model_url = (
+    "https://raw.githubusercontent.com/adam1861/weather_forcasting/"
+    "334b9f6c95268661ed89a403d880b95979274dfe/models/xgb_model.json"
+)
+
+
+def _prepare_model_file():
+    local_model = Path("models/xgb_model.json")
+    if local_model.is_file():
+        os.environ["WEATHER_XGB_MODEL_PATH"] = str(local_model)
+        return
+
+    cached_model = Path(gettempdir()) / "weather-xgb-model.json"
+    if not cached_model.is_file() or cached_model.stat().st_size < 1_000_000:
+        response = requests.get(_model_url, timeout=(10, 60))
+        response.raise_for_status()
+        if len(response.content) < 1_000_000:
+            raise RuntimeError("Downloaded weather model is incomplete")
+        cached_model.write_bytes(response.content)
+    os.environ["WEATHER_XGB_MODEL_PATH"] = str(cached_model)
 
 
 def _send_json(response, status, body):
@@ -28,7 +52,12 @@ def _ensure_model_loaded():
         return True
     with _model_load_lock:
         if not _model_loaded:
-            _model_loaded = weather_model_server.load_model()
+            try:
+                _prepare_model_file()
+                _model_loaded = weather_model_server.load_model()
+            except Exception as error:
+                print(f"Unable to prepare the weather model: {error}")
+                _model_loaded = False
     return _model_loaded
 
 
